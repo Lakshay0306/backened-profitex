@@ -15,6 +15,8 @@ const invoiceSchema = mongoose.Schema(
       type: String,
       required: true
     },
+    customerPhone: String,
+    customerEmail: String,
     items: [
       {
         productName: String,

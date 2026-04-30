@@ -10,7 +10,7 @@ const PDFDocument = require("pdfkit");
 exports.createInvoice = async (req, res) => {
   try {
 
-    const { customerName, items } = req.body;
+    const { customerName, customerPhone, customerEmail, items } = req.body;
 
     let subtotal = 0;
     let gstTotal = 0;
@@ -55,6 +55,8 @@ exports.createInvoice = async (req, res) => {
       user: req.user._id,
       invoiceNumber: "INV-" + Date.now(),
       customerName,
+      customerPhone,
+      customerEmail,
       items: invoiceItems,
       subtotal,
       gstTotal,
@@ -127,6 +129,8 @@ exports.downloadInvoice = async (req, res) => {
     doc.text(`Invoice No: ${invoice.invoiceNumber}`);
     doc.text(`Date: ${new Date(invoice.createdAt).toLocaleDateString()}`);
     doc.text(`Customer: ${invoice.customerName}`);
+    if (invoice.customerPhone) doc.text(`Phone: ${invoice.customerPhone}`);
+    if (invoice.customerEmail) doc.text(`Email: ${invoice.customerEmail}`);
     doc.moveDown(2);
 
     /* ===== TABLE HEADER ===== */
