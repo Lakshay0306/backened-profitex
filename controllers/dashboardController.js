@@ -1,6 +1,7 @@
 const Invoice = require("../models/Invoice");
 const Purchase = require("../models/Purchase");
 const Expense = require("../models/Expense");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 exports.getDashboardSummary = async (req, res) => {
   try {
@@ -80,5 +81,48 @@ exports.getDashboardSummary = async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Dashboard error" });
+  }
+};
+
+exports.getAiInsights = async (req, res) => {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.json({ insights: "AI insights feature is disabled because GEMINI_API_KEY is not set in the server environment." });
+    }
+
+    // Fetch data context
+    const invoices = await Invoice.find({ user: req.user._id });
+    const sales = invoices.reduce((sum, inv) => sum + (inv.grandTotal || 0), 0);
+
+    const purchases = await Purchase.find({ user: req.user._id });
+    const purchaseTotal = purchases.reduce((sum, p) => sum + (p.totalCost || 0), 0);
+
+    const expenses = await Expense.find({ user: req.user._id });
+    const expenseTotal = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+    
+    const profit = sales - purchaseTotal - expenseTotal;
+
+    // Build the prompt
+    const prompt = `You are an expert AI business manager analyzing a billing and inventory system. 
+Here is the current business summary:
+- Total Sales: ₹${sales}
+- Total Purchases (Inventory Cost): ₹${purchaseTotal}
+- Total Expenses (Operations): ₹${expenseTotal}
+- Net Profit: ₹${profit}
+
+Provide 3 short, punchy, actionable business insights or suggestions based on these numbers to help improve the business. 
+Format your response as a simple text with bullet points (no markdown bolding, just plain text bullets starting with '•'). Keep it very concise (1-2 sentences per point).`;
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    res.json({ insights: text });
+  } catch (error) {
+    console.error("AI Insight Error:", error);
+    res.status(500).json({ message: "Failed to generate AI insights" });
   }
 };

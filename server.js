@@ -34,6 +34,7 @@ app.use("/api/purchases", require("./routes/purchaseRoutes"));
 app.use("/api/dashboard", require("./routes/dashboardRoutes"));
 app.use("/api/company", require("./routes/companyRoutes"));
 app.use("/api/user", require("./routes/userRoutes"));
+app.use("/api/ai", require("./routes/aiRoutes"));
 
 /* =========================
    ROOT ROUTE
