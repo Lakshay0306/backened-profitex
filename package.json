@@ -1,5 +1,5 @@
 {
-  "name": "profitex-server",
+  "name": "nexaventory-server",
   "version": "1.0.0",
   "description": "Smart Billing & Inventory Management System Backend",
   "main": "server.js",
@@ -9,7 +9,7 @@
     "dev": "nodemon server.js"
   },
   "keywords": [
-    "profitex",
+    "nexaventory",
     "billing",
     "inventory",
     "nodejs",

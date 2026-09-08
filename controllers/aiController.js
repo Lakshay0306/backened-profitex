@@ -30,7 +30,7 @@ exports.chatWithAi = async (req, res) => {
     
     const productList = products.map(p => `${p.name} (Stock: ${p.quantity}, Price: ${p.price})`).join(", ");
 
-    const systemPrompt = `You are an expert AI Virtual Manager for a business using the 'Profitex' Billing & Inventory system.
+    const systemPrompt = `You are an expert AI Virtual Manager for a business using the 'NexaVentory' Billing & Inventory system.
 Here is the current summary of the business data:
 - Total Sales: ₹${totalSales}
 - Total Purchases (Inventory Cost): ₹${totalPurchases}
@@ -196,5 +196,62 @@ Format the output as a JSON object:
   } catch (error) {
     console.error("Draft Email Error:", error);
     res.status(500).json({ message: "Failed to generate email: " + error.message });
+  }
+};
+
+
+exports.optimizePricing = async (req, res) => {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(400).json({ message: "GEMINI_API_KEY not configured." });
+    }
+
+    const products = await Product.find({ user: req.user._id });
+    const invoices = await Invoice.find({ user: req.user._id });
+
+    // Calculate sales velocity
+    const salesVolume = {};
+    invoices.forEach(inv => {
+      inv.items.forEach(item => {
+        salesVolume[item.productName] = (salesVolume[item.productName] || 0) + item.quantity;
+      });
+    });
+
+    const pricingData = products.map(p => ({
+      name: p.name,
+      currentPrice: p.price,
+      totalSold: salesVolume[p.name] || 0
+    }));
+
+    const prompt = `Analyze this pricing and sales data. Identify up to 5 products where the price could be optimized based on sales volume. High sales volume might indicate room for a slight price increase, while zero or low sales might require a discount.
+Return ONLY a valid JSON array of objects. Each object should have:
+- "productName": string
+- "currentPrice": number
+- "recommendedPrice": number
+- "reason": string (short reason like "High sales volume, price inelasticity potential")
+
+Pricing Data:
+${JSON.stringify(pricingData)}
+
+Example Output:
+[{"productName": "Laptop", "currentPrice": 50000, "recommendedPrice": 52000, "reason": "High sales volume, can slightly increase margin"}]`;
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+    const result = await model.generateContent(prompt);
+    
+    let text = (await result.response).text().trim();
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    if (jsonMatch) {
+      text = jsonMatch[0];
+    }
+
+    const parsedData = JSON.parse(text);
+    res.json(parsedData);
+
+  } catch (error) {
+    console.error("Pricing Optimize Error:", error);
+    res.status(500).json({ message: "Failed to optimize pricing: " + error.message });
   }
 };

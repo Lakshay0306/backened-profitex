@@ -114,7 +114,7 @@ exports.downloadInvoice = async (req, res) => {
 
     /* ===== COMPANY HEADER ===== */
 
-    doc.fontSize(22).text(company?.name || "PROFITEX");
+    doc.fontSize(22).text(company?.name || "NEXAVENTORY");
 
     if (company?.logo) {
       doc.image(`uploads/${company.logo}`, 450, 40, { width: 80 });

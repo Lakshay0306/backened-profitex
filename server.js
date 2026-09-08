@@ -41,7 +41,7 @@ app.use("/api/ai", require("./routes/aiRoutes"));
 ========================= */
 
 app.get("/", (req, res) => {
-  res.send("Profitex API Running 🚀");
+  res.send("NexaVentory API Running 🚀");
 });
 
 /* =========================
